@@ -2,10 +2,10 @@
 This is a simple chatroom, implemented in GO using Websocket Gorilla package, VueJS and Bulma in the front end.
 
 To run:
-
-go run *.go
+<br>
+go run *.go<br>
 open index.html (couple of this tabs for interacting)
-
+<br>
 Back end:<br>
 Have 3 pieces: main, hub and client <br>
 main.go: <br>
