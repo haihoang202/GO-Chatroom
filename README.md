@@ -1,6 +1,11 @@
 # GO-Chatroom
 This is a simple chatroom, implemented in GO using Websocket Gorilla package, VueJS and Bulma in the front end.
 
+To run:
+
+go run *.go
+open index.html (couple of this tabs for interacting)
+
 Back end:<br>
 Have 3 pieces: main, hub and client <br>
 main.go: <br>
