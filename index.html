@@ -4,7 +4,8 @@
 	<title>Chatroom Citadel</title>
 	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
 	<script src="https://unpkg.com/vue@2.5.13/dist/vue.js"></script>
-
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js"></script>
+	<script src=""></script>
 	<style>
 		body{
 			padding: 40px;
@@ -17,22 +18,35 @@
 	<div id="app">
 		<section class="hero is-primary is-medium">
 		  <div class="hero-body">
+		  	<!-- <div class="is-danger is-outlined">Welcome {{ username }}</div> -->
+		  	<a class="button is-danger is-rounded">Welcome {{ username }}</a>
 		    <div class="container" v-html="chatcontainer">
 		    	<!-- {{ chatcontainer }} -->
 		    </div>
 		  </div>
 		</section>
 		<div class="column">
-			<div class="field">
+			<div class="field" v-if="joined">
 				<label class="label">Message</label>
 				<p class="control">
 					<textarea cols="30" rows="2" class="textarea" v-model="msg"></textarea>
 				</p>
-			</br>
-				<p>
-					<a class="button is-primary" @click="send">Send</a>	
-				</p>
+				<br>
+				<div class="container">
+					<p><a class="button is-primary" @click="send">Send</a></p>
+				</div>
 			</div>
+			<div class="field" v-if="!joined">
+				<label class="label">Register</label>
+				<p class="control">
+					<input class="input" type="text" name="username" placeholder="Username" v-model="username">
+				</p>
+				<br>
+				<div class="container">
+					<p><a class="button is-primary" @click="join">Join</a></p>
+				</div>
+			</div>
+			
 		</div>
 	</div>
 	<script>
@@ -44,24 +58,39 @@
 				msg: 'a message',
 				chatcontainer: '',
 				newMsg: 'new',
-				
+				clientID: '',
+				joined: false,
+				username: '',
+				avatar: '',
 			},
 
 			created() {
 				var self = this;
-				this.ws = new WebSocket('ws://'+window.location.host+'/mess/ws')
-				this.ws.addEventListener("message",function(e){
-					var msg = JSON.parse(e.data)
-					self.chatcontainer += '<p>Client '+msg.clientID+' said: '+msg.data+'</p>'
+					this.ws = new WebSocket('ws://'+window.location.host+'/mess/ws')
+					this.ws.addEventListener("message",function(e){
+						var msg = JSON.parse(e.data)
+						console.log(e)
+						self.chatcontainer += '<p>'+msg.clientID+' said: '+msg.data+'</p>'
 				})
 			},
 
 			methods: {
-				send(){
-					console.log(this.msg)
-					console.log(this.chatcontainer)
-					this.ws.send(this.msg)
+				join(){
+					this.joined = true
+					this.avatar =  '<img src="' + this.gravatarURL(this.username) + '">'
 				},
+
+				send(){
+					this.ws.send(JSON.stringify({
+						clientID: 	this.username,
+						data: 		this.msg
+					}))
+					this.msg = ''
+				},
+
+				gravatarURL: function(email) {
+		            return 'http://www.gravatar.com/avatar/' + CryptoJS.MD5(this.username);
+		        }
 			}
 		});
 	</script>

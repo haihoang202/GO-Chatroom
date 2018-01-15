@@ -10,8 +10,12 @@ import (
 type Client struct {
 	hub *Hub
 	conn *websocket.Conn
-	send chan[] byte
-	clientID int
+	send chan Message
+}
+
+type Message struct {
+	Client 	string	`json:"clientID"`
+	Data	string	`json:"data"`
 }
 
 var upgrader = websocket.Upgrader{}
@@ -28,8 +32,7 @@ func serveClient(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client := &Client{
 		hub: hub,
 		conn: conn,
-		send: make(chan[] byte, 256),
-		clientID: 0}
+		send: make(chan Message),}
 
 	client.hub.join <- client
 
@@ -39,16 +42,15 @@ func serveClient(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 func (client *Client) readMsg() {
 	for {
-		// var newmsg Message
-		// _, msg, err := client.conn.ReadJSON(&newmsg)
-		_, msg, err := client.conn.ReadMessage()
+		var msg Message
+		err := client.conn.ReadJSON(&msg)
 		if err != nil {
 			println("Client left")
 			client.conn.Close()
 			break
 		}
 
-		println("Reading from user and broadcasting: ", string(msg))
+		println("Reading from user and broadcasting: ", string(msg.Data))
 		client.hub.broadcast <- msg
 	}
 }
@@ -57,16 +59,11 @@ func (client *Client) writeMsg() {
 	for {
 		select{
 		case msg := <-client.send:
-			println("Receving message: ", string(msg))
+			println("Receving message: ", msg.Data)
 			client.conn.WriteJSON(Message{
-				Client:	client.clientID,
-				Data: 	string(msg),
+				Client:	msg.Client,
+				Data: 	msg.Data,
 			})
 		}	
 	}
-}
-
-type Message struct {
-	Client 	int		`json:"clientID"`
-	Data	string	`json:"data"`
 }
