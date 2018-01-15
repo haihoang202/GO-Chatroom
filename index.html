@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Chatroom Citadel</title>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+	<script src="https://unpkg.com/vue@2.5.13/dist/vue.js"></script>
+
+	<style>
+		body{
+			padding: 40px;
+		}
+	</style>
+	
+</head>
+<body>
+	<h1 class="title">Welcome to the Broadcast ROOM</h1>
+	<div id="app">
+		<section class="hero is-primary is-medium">
+		  <div class="hero-body">
+		    <div class="container" v-html="chatcontainer">
+		    	<!-- {{ chatcontainer }} -->
+		    </div>
+		  </div>
+		</section>
+		<div class="column">
+			<div class="field">
+				<label class="label">Message</label>
+				<p class="control">
+					<textarea cols="30" rows="2" class="textarea" v-model="msg"></textarea>
+				</p>
+			</br>
+				<p>
+					<a class="button is-primary" @click="send">Send</a>	
+				</p>
+			</div>
+		</div>
+	</div>
+	<script>
+		new Vue ({
+			el: '#app',
+
+			data: {
+				ws: null,
+				msg: 'a message',
+				chatcontainer: '',
+				newMsg: 'new',
+				
+			},
+
+			created() {
+				var self = this;
+				this.ws = new WebSocket('ws://'+window.location.host+'/mess/ws')
+				this.ws.addEventListener("message",function(e){
+					var msg = JSON.parse(e.data)
+					self.chatcontainer += '<p>Client '+msg.clientID+' said: '+msg.data+'</p>'
+				})
+			},
+
+			methods: {
+				send(){
+					console.log(this.msg)
+					console.log(this.chatcontainer)
+					this.ws.send(this.msg)
+				},
+			}
+		});
+	</script>
+</body>
+</html>
