@@ -6,6 +6,8 @@ To run:
 go run *.go<br>
 open index.html (couple of this tabs for interacting)
 <br>
+<br>
+<br>
 Back end:<br>
 Have 3 pieces: main, hub and client <br>
 main.go: <br>
