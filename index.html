@@ -5,36 +5,64 @@
 	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
 	<script src="https://unpkg.com/vue@2.5.13/dist/vue.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js"></script>
-	<script src=""></script>
 	<style>
 		body{
 			padding: 40px;
 		}
+
+		.chat {
+		    list-style: none;
+		}
+
+		.chat li {
+			padding: 0.5rem;
+		    overflow: hidden;
+		    display: flex;
+		}
+
+		.self {
+			justify-content: flex-end;
+			align-items: flex-end;
+		}
+
+		.other {
+			position: relative;
+		}
 	</style>
-	
 </head>
 <body>
 	<h1 class="title">Welcome to the Broadcast ROOM</h1>
 	<div id="app">
-		<section class="hero is-primary is-medium">
+		
+		<section class="hero is-primary is-medium" v-if="broadcast">
 		  <div class="hero-body">
-		  	<!-- <div class="is-danger is-outlined">Welcome {{ username }}</div> -->
 		  	<a class="button is-danger is-rounded">Welcome {{ username }}</a>
-		    <div class="container" v-html="chatcontainer">
-		    	<!-- {{ chatcontainer }} -->
-		    </div>
+		  	<ul class="chat" v-html="chatcontainer"></ul>
 		  </div>
 		</section>
+		
+		<br>
+
+		<section class="hero is-primary is-medium" v-if="private">
+		  <div class="hero-body">
+		  	<a class="button is-danger is-rounded">Private chat</a>
+		  	<ul class="chat" v-html="privatechatcontainer"></ul>
+		  </div>
+		</section>
+
 		<div class="column">
 			<div class="field" v-if="joined">
+				<label class="label">To</label>
+				<p class="control">
+					<input class="input" type="text" name="receiver" placeholder="ReceiverID" v-model="receiverID">
+				</p>
+				<br>
 				<label class="label">Message</label>
 				<p class="control">
 					<textarea cols="30" rows="2" class="textarea" v-model="msg"></textarea>
 				</p>
 				<br>
-				<div class="container">
 					<p><a class="button is-primary" @click="send">Send</a></p>
-				</div>
 			</div>
 			<div class="field" v-if="!joined">
 				<label class="label">Register</label>
@@ -42,9 +70,11 @@
 					<input class="input" type="text" name="username" placeholder="Username" v-model="username">
 				</p>
 				<br>
-				<div class="container">
+				<p class="control">
+					<input class="input" type="text" name="color" placeholder="Color: is-primary, is-danger, is-warning, ... (Bulma color)" v-model="color">
+				</p>
+				<br>
 					<p><a class="button is-primary" @click="join">Join</a></p>
-				</div>
 			</div>
 			
 		</div>
@@ -57,40 +87,87 @@
 				ws: null,
 				msg: 'a message',
 				chatcontainer: '',
-				newMsg: 'new',
-				clientID: '',
 				joined: false,
 				username: '',
-				avatar: '',
+				broadcast: true,
+				receiverID: '',
+				chatcontainer: '',
+				private: false,
+				privatechatcontainer: '',
+				color: '',
 			},
 
 			created() {
-				var self = this;
-					this.ws = new WebSocket('ws://'+window.location.host+'/mess/ws')
-					this.ws.addEventListener("message",function(e){
-						var msg = JSON.parse(e.data)
-						console.log(e)
-						self.chatcontainer += '<p>'+msg.clientID+' said: '+msg.data+'</p>'
+				var self = this
+
+				this.ws = new WebSocket('ws://'+window.location.host+'/mess/ws')
+
+				this.ws.addEventListener("message",function(e){
+					var msg = JSON.parse(e.data)
+					// self.$emit('newMess',msg)
+					console.log(msg)
+					if (msg.type == "broadcast") {
+						var float = ""
+						if (msg.senderID == self.username) {
+							float = "class='self'"
+						} else {
+							float = "class='other'"
+						}
+						self.chatcontainer += '<li '+float+'><div><p>'+msg.senderID+'</p><a class="button '+msg.color+' is-rounded">'+msg.data+'</a></div></li>'
+					}
+					if (msg.type == "private") {
+						var float = ""
+						if (msg.senderID == self.username) {
+							float = "class='self'"
+						} else {
+							float = "class='other'"
+						}
+						self.private = true
+						self.privatechatcontainer += '<li '+float+'><div><p>'+msg.senderID+'</p><a class="button '+msg.color+' is-rounded">'+msg.data+'</a></div></li>'
+					}
+					
 				})
 			},
 
 			methods: {
 				join(){
+					this.ws.send(JSON.stringify({
+						type: 				"join",
+						senderID: 			this.username,
+						receiverID: 		"",
+						data: 				"Join",
+						color: 				this.color
+					}))
+					
 					this.joined = true
-					this.avatar =  '<img src="' + this.gravatarURL(this.username) + '">'
 				},
 
 				send(){
-					this.ws.send(JSON.stringify({
-						clientID: 	this.username,
-						data: 		this.msg
-					}))
+					if (this.receiverID == '') {
+						this.ws.send(JSON.stringify({
+							type: 				"broadcast",
+							senderID: 			this.username,
+							receiverID: 		"",
+							data: 				this.msg,
+							color: 				this.color
+						}))	
+					} else {
+						this.ws.send(JSON.stringify({
+							type: 				"private",
+							senderID: 			this.username,
+							receiverID: 		this.receiverID,
+							data: 				this.msg,
+							color: 				this.color
+						}))
+					}
+					
 					this.msg = ''
 				},
 
-				gravatarURL: function(email) {
-		            return 'http://www.gravatar.com/avatar/' + CryptoJS.MD5(this.username);
-		        }
+				privConverse(){
+					this.public = false
+
+				}
 			}
 		});
 	</script>
