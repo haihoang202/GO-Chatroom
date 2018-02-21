@@ -31,6 +31,7 @@ func (hub *Hub) run() {
 			}
 		case client := <-hub.exit:
 			println(client)
+			delete(hub.clients, client.id)
 		case msg := <-hub.broadcast:
 			println("[BROADCASTING] message", msg.Data)
 			for _, client := range hub.clients {
