@@ -16,7 +16,7 @@ func main() {
 		serveClient(hub, w, r)
 	})
 
-	if err := http.ListenAndServe(":1004", nil); err != nil {
+	if err := http.ListenAndServe(":2002", nil); err != nil {
 		log.Fatal("ListenAndServe Error: ", err)
 	}
 

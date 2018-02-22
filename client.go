@@ -1,10 +1,9 @@
 package main
 
 import (
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
 type Client struct {
@@ -63,7 +62,6 @@ func (client *Client) readMsg() {
 		err := client.conn.ReadJSON(&msg)
 		if err != nil {
 			println("Client left")
-			client.hub.exit <- client
 			client.conn.Close()
 			break
 		}
